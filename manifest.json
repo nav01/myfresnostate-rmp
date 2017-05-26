@@ -1,0 +1,13 @@
+{
+    "name": "Rate My CSU Fresno Professor",
+    "description": "Add rate my professor ratings to myfresnostate class search results.",
+    "version": "1.0",
+    "content_scripts": [
+        {
+            "matches": ["https://my.fresnostate.edu/*"],
+            "js": ["jquery-3.2.1.js","content_script.js"]
+            
+        }
+    ],
+    "manifest_version": 2
+}
