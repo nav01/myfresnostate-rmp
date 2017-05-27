@@ -2,6 +2,13 @@
     "name": "Rate My CSU Fresno Professor",
     "description": "Add rate my professor ratings to myfresnostate class search results.",
     "version": "1.0",
+    "permissions": [
+        "https://www.ratemyprofessors.com/*"
+    ],
+    "background": {
+        "scripts": ["event_page.js"],
+        "persistent": false
+    },
     "content_scripts": [
         {
             "matches": ["https://my.fresnostate.edu/*"],

@@ -1,3 +1,16 @@
+function getRating(instructorName){
+    instructorQuery = instructorName.replace(" ","+");
+    var xhr = new XMLHttpRequest();
+    //There is no official api for ratemyprofessor so it has to be done through unnofficial means.
+    //This has the overhead of receiving an entire html webpage as a response, but it's the best
+    //that can be done for now.
+    var query = `http://www.ratemyprofessors.com/search.jsp?query=${instructorQuery}+fresno+state`;
+    
+    chrome.runtime.sendMessage(({query: query}), function(response) {
+        console.log(response.rawHtml);
+    });
+}
+
 //Class information lies in an iframe, but fortunately it is from the same domain so 
 //it can be manipulated.
 var iframeId = 'ptifrmtgtframe';
@@ -9,6 +22,7 @@ var iFrame = document.getElementById(iframeId);
 $(iFrame).on("load", function () {
     iframeContents = $(iFrame).contents();
     $(iframeContents).on('mouseover',instructorElementIds, function() {
-        console.log($(this).text());
+        //console.log($(this).text());
+        getRating($(this).text());
     });
 });
