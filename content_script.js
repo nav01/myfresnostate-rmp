@@ -3,11 +3,11 @@ function getRating(instructorName){
     var xhr = new XMLHttpRequest();
     //There is no official api for ratemyprofessor so it has to be done through unnofficial means.
     //This has the overhead of receiving an entire html webpage as a response, but it's the best
-    //that can be done for now.
-    var query = `http://www.ratemyprofessors.com/search.jsp?query=${instructorQuery}+fresno+state`;
+    //that can be done.
+    var query = `http://www.ratemyprofessors.com/search.jsp?query=${instructorQuery}+california+state+university+fresno`;
     
     chrome.runtime.sendMessage(({query: query}), function(response) {
-        console.log(response.rawHtml);
+        console.log(response.ratings);
     });
 }
 

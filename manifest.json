@@ -6,7 +6,7 @@
         "https://www.ratemyprofessors.com/*"
     ],
     "background": {
-        "scripts": ["event_page.js"],
+        "scripts": ["jquery-3.2.1.js","event_page.js"],
         "persistent": false
     },
     "content_scripts": [
