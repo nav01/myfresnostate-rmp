@@ -1,19 +1,25 @@
 
-//Returns an array of links, or undefined if there are no results.
+//Returns an array of link/department pairs stored in an object, or undefined if there are no results.
 function extractLinks(doc){
     const RESULT_LIST_CONTAINER_ID = "#searchResultsBox";
     const INSTRUCTOR_ITEM_CLASS = ".listing.PROFESSOR";
     const RESULT_COUNT_CLASS = ".result-count";
     const NO_RESULTS = "Your search didn't return any results."
+    //The search doesn't let you narrow by department so it has to be extracted from the
+    //search results or rating page.  The department helps the user  in the case of multiple instructors 
+    //with the same name.  Not helpful in the case that the two same named professors are in the same department,
+    //but helpful in the school-wide case, which is a lot more likely.
+    const INSTRUCTOR_DEPARTMENT_CLASS = ".sub";
     
     var resultsList = $(doc).find(RESULT_LIST_CONTAINER_ID).find(INSTRUCTOR_ITEM_CLASS);
     if($(resultsList).find(RESULT_COUNT_CLASS).text().trim() == NO_RESULTS){
-        console.log("y tho");
         return undefined;
     }
     var ratingLinks = [];
     $(resultsList).find('a').each(function() {
-        ratingLinks.push("http://www.ratemyprofessors.com" + $(this).attr('href'));
+        //The subheading that contains the department is in the form: "School_Name, Department"
+        var department = $(this).find(INSTRUCTOR_DEPARTMENT_CLASS).text().split(',')[1].trim();
+        ratingLinks.push({link: "http://www.ratemyprofessors.com" + $(this).attr('href'), department:department});
     });
     return ratingLinks;
 }
@@ -24,10 +30,12 @@ function getRatings(links, sendResponse, ratings = []){
     const OVERALL_RATING_CONTAINER_CLASS = ".breakdown-container.quality";
     const DIFFICULTY_RATING_CONTAINER_CLASS = ".breakdown-section.difficulty";
     const RATING_CLASS = ".grade";
+    const NUMBER_OF_RATINGS_CLASS = ".table-toggle.rating-count.active";
     //If the body tag has the .show_professor class, then there are ratings, otherwise, go to the next link.
     //An instructor page can exist even though there are no ratings so this is necessary in order to not return empty values.
     //Note: leave out the dot prefix because the JQuery hasClass() method is used.
-    const RATINGS_CLASS = "show_professor";
+    const RATINGS_EXIST_CLASS = "show_professor";
+
     
     if(links.length == 0){
         if(ratings.length == 0){
@@ -38,14 +46,16 @@ function getRatings(links, sendResponse, ratings = []){
         return;
     }
     var xhr = new XMLHttpRequest();
-    xhr.open("GET",links.pop(),true);
+    var link = links.pop();
+    xhr.open("GET",link.link,true);
     xhr.onload = function() {
-        parser = new DOMParser();
-        ratingPage = parser.parseFromString(xhr.responseText,"text/html");
-        if($(ratingPage.body).hasClass(RATINGS_CLASS)){
+        var parser = new DOMParser();
+        var ratingPage = parser.parseFromString(xhr.responseText,"text/html");
+        if($(ratingPage.body).hasClass(RATINGS_EXIST_CLASS)){
             var overallRating = $(ratingPage).find(RATING_CONTAINER_CLASS).find(OVERALL_RATING_CONTAINER_CLASS).find(RATING_CLASS).text().trim();
             var difficultyRating = $(ratingPage).find(RATING_CONTAINER_CLASS).find(DIFFICULTY_RATING_CONTAINER_CLASS).find(RATING_CLASS).text().trim();
-            ratings.push({overall: overallRating, difficulty: difficultyRating});
+            var numberOfRatings = $(ratingPage).find(NUMBER_OF_RATINGS_CLASS).text().trim();
+            ratings.push({department: link.department, overall: overallRating, difficulty: difficultyRating, ratingsCount: numberOfRatings});
         }
         getRatings(links, sendResponse, ratings);
     }
