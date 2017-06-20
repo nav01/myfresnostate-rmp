@@ -13,13 +13,13 @@ function extractLinks(doc){
     
     var resultsList = $(doc).find(RESULT_LIST_CONTAINER_ID).find(INSTRUCTOR_ITEM_CLASS);
     if($(resultsList).find(RESULT_COUNT_CLASS).text().trim() == NO_RESULTS){
-        return undefined;
+        return null;
     }
     var ratingLinks = [];
     $(resultsList).find('a').each(function() {
         //The subheading that contains the department is in the form: "School_Name, Department"
         var department = $(this).find(INSTRUCTOR_DEPARTMENT_CLASS).text().split(',')[1].trim();
-        ratingLinks.push({link: "http://www.ratemyprofessors.com" + $(this).attr('href'), department:department});
+        ratingLinks.push({link: "http://www.ratemyprofessors.com" + $(this).attr('href'), department});
     });
     return ratingLinks;
 }
@@ -35,13 +35,12 @@ function getRatings(links, sendResponse, ratings = []){
     //An instructor page can exist even though there are no ratings so this is necessary in order to not return empty values.
     //Note: leave out the dot prefix because the JQuery hasClass() method is used.
     const RATINGS_EXIST_CLASS = "show_professor";
-
-    
-    if(links.length == 0){
+ 
+    if(links.length == 0){ //Recursion termination condition.
         if(ratings.length == 0){
-            sendResponse({results: undefined});
+            sendResponse({ratings: null});
         } else {
-            sendResponse({ratings:ratings});
+            sendResponse({ratings});
         }
         return;
     }
@@ -49,13 +48,14 @@ function getRatings(links, sendResponse, ratings = []){
     var link = links.pop();
     xhr.open("GET",link.link,true);
     xhr.onload = function() {
-        var parser = new DOMParser();
+        //Parses the rating page and extracts rating information then makes a recursive call on the outer method to process the remaining links.
+        var parser = new DOMParser(); //Jquery parser ignores body so DOMParser is used instead.
         var ratingPage = parser.parseFromString(xhr.responseText,"text/html");
         if($(ratingPage.body).hasClass(RATINGS_EXIST_CLASS)){
             var overallRating = $(ratingPage).find(RATING_CONTAINER_CLASS).find(OVERALL_RATING_CONTAINER_CLASS).find(RATING_CLASS).text().trim();
             var difficultyRating = $(ratingPage).find(RATING_CONTAINER_CLASS).find(DIFFICULTY_RATING_CONTAINER_CLASS).find(RATING_CLASS).text().trim();
-            var numberOfRatings = $(ratingPage).find(NUMBER_OF_RATINGS_CLASS).text().trim();
-            ratings.push({department: link.department, overall: overallRating, difficulty: difficultyRating, ratingsCount: numberOfRatings});
+            var ratingsCount = $(ratingPage).find(NUMBER_OF_RATINGS_CLASS).text().trim();
+            ratings.push({link:link.link,department:link.department, ratingsCount, overallRating, difficultyRating});
         }
         getRatings(links, sendResponse, ratings);
     }
@@ -66,11 +66,11 @@ function getRatings(links, sendResponse, ratings = []){
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET",request.query, true);
+    xhr.open("GET",request.request, true);
     xhr.onload = function(){
         var ratingLinks = extractLinks($.parseHTML(xhr.responseText, undefined));
-        if(ratingLinks == undefined) {
-            sendResponse({results: undefined});
+        if(!ratingLinks) {
+            sendResponse({ratings: null});
             return;
         }
         getRatings(ratingLinks,sendResponse);

@@ -1,0 +1,78 @@
+.blue-border {
+    border: 1px solid #4a598c;
+}
+.formatting{
+    width: 200px;
+    text-align:center;
+}
+.formatting-multi-rating{
+    width:400px;
+    text-align:center;
+}
+.rating-container{
+    background-color:white;
+}
+.rating-link{
+    color:white;
+}
+ .rating p{
+     background-color:#7382b5;
+     color:white;
+     margin:0px;
+     border: 1px solid white;
+ }
+
+.rating-table {
+    table-layout:fixed;
+    text-align:center;
+    width: 100%;  
+}
+.rating-table thead {
+    background-color:#dae2ee;
+    color:#4a598c;
+}
+
+.no-ratings{
+    background-color:#d6e1f9;
+}
+
+.no-ratings p{
+    font-size:200%;
+    color:#4a598c;
+}
+
+.rating-table td {
+     border: 1px solid #4a598c;
+     margin: 0px;
+}
+.rating-header {
+    background-color:#0a3e91;
+    line-height:12px;
+}
+.visible {
+    display:inline-block;
+    color:white;
+}
+.expand-rating-arrow {
+    display:none;
+}
+.instructor-name{
+    color:white;
+}
+.close-rating{
+    float:right;
+    color:white;
+    cursor:pointer;
+}
+.arrow-properties {
+    float:left;
+    color:white;
+    cursor:pointer;
+}
+.no-select{
+    user-select: none;
+    cursor:default;
+}
+.grabbable {
+    cursor: move; /* fallback if grab cursor is unsupported */
+}
