@@ -25,7 +25,7 @@
 .rating-table {
     table-layout:fixed;
     text-align:center;
-    width: 100%;  
+    width: 100%;
 }
 .rating-table thead {
     background-color:#dae2ee;
@@ -75,4 +75,7 @@
 }
 .grabbable {
     cursor: move; /* fallback if grab cursor is unsupported */
+}
+span[id ^= "MTG_INSTR$"] {
+    cursor: pointer;
 }

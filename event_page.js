@@ -64,18 +64,20 @@ function getRatings(links, sendResponse, ratings = []){
 
 
 chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET",request.request, true);
-    xhr.onload = function(){
-        var ratingLinks = extractLinks($.parseHTML(xhr.responseText, undefined));
-        if(!ratingLinks) {
-            sendResponse({ratings: null});
-            return;
+    function(request, sender, sendResponse) {
+        let instructorParameter = request.instructorName.replace(/\s+/g, '+');
+        let query = 'http://www.ratemyprofessors.com/search.jsp?query=' + instructorParameter + '+california+state+university+fresno';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', query, true);
+        xhr.onload = function(){
+            var ratingLinks = extractLinks($.parseHTML(xhr.responseText, undefined));
+            if(!ratingLinks) {
+                sendResponse({ratings: null});
+                return;
+            }
+            getRatings(ratingLinks, sendResponse);
         }
-        getRatings(ratingLinks,sendResponse);
-    }
-    xhr.send();
-    return true;
+        xhr.send();
+        return true;
   }
 );

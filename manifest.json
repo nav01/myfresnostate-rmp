@@ -12,9 +12,9 @@
     "content_scripts": [
         {
             "matches": ["https://my.fresnostate.edu/*","https://cmsweb.fresnostate.edu/*"],
-            "js": ["jquery-3.2.1.js","jquery.hoverIntent.js","content_script.js"]
+            "js": ["jquery-3.2.1.js","content_script.js"]
         }
     ],
     "web_accessible_resources": ["rating.html","no-rating.html","multiple-ratings.html","rating.css"],
-    "manifest_version": 2
+    "manifest_version": 3
 }

@@ -1,169 +1,208 @@
 function RatingsViewController(iframeBody){
-    //HTML class and id constants.
-    const EXPAND_RATING_ARROW = ".expand-rating-arrow";
-    const COLLAPSE_RATING_ARROW = ".collapse-rating-arrow";
-    const CLOSE_RATING = ".close-rating";
-    const RATING_HEADER = ".rating-header";
-    const RATING_VISIBILITY = ".rating-visibility";
-    const INSTRUCTOR_NAME = ".instructor-name";
-    const RATING_CONTAINER = ".rating-container";
-    const RATING_TABLE = ".rating-table";
-    
-    const RATING_HTML = "ratingHtml";
-    const NO_RATING_HTML = "noRatingHtml";
-    const MULTIPLE_RATING_HTML = "multipleRatingHtml";
-    var html = {};
-    var iframeBody = iframeBody;
-    var ratingDivs = {}; //Cache divs for performance.
-      
-    var setHtml = function(fileName,propertyToSet) {
-        let xhr = new XMLHttpRequest();
-        xhr.open("GET",chrome.runtime.getURL(fileName), true);
-        xhr.onload = function() {
-            html[propertyToSet] = xhr.responseText;
+    var R = {
+        init: function(){
+            R._func.injectCSS();
+            R._func.loadHTML();
+            R._func.bindEventHandlers();
         }
-        xhr.send();
+    };
+    R.INSTRUCTOR_NAME_SELECTOR = 'span[id ^= "MTG_INSTR$"]';
+    R._vars = {
+        html: {},
+        $iframeBody: $(iframeBody),
+        ratingsCache: {},
     }
-    
-    //Inject the styling into the iframe.
-    let cssLink = document.createElement("link");
-    cssLink.href = chrome.runtime.getURL("rating.css"); 
-    cssLink.rel = "stylesheet"; 
-    cssLink.type = "text/css"; 
-    $(iframeBody).append(cssLink);
-    //Collect the html for the three different rating cases once and parse as needed to create new nodes.
-    setHtml("rating.html",RATING_HTML);
-    setHtml("no-rating.html", NO_RATING_HTML);
-    setHtml("multiple-ratings.html", MULTIPLE_RATING_HTML);
-    
-    $(iframeBody).on('click',EXPAND_RATING_ARROW, function(){
-        $(this).hide();
-        $(this).siblings(COLLAPSE_RATING_ARROW).css({display:'inline-block'});
-        $(this).closest(RATING_HEADER).siblings(RATING_VISIBILITY).show();
-    });
-    $(iframeBody).on('click',COLLAPSE_RATING_ARROW, function(){
-        $(this).hide();
-        $(this).siblings(EXPAND_RATING_ARROW).css({display:'inline-block'});
-        $(this).closest(RATING_HEADER).siblings(RATING_VISIBILITY).hide();
-    });
-    $(iframeBody).on('click',CLOSE_RATING, function(){
-        $(this).closest(RATING_CONTAINER).hide();
-    });
-    $(iframeBody).on('mousedown', INSTRUCTOR_NAME, function(event) {
-        //Allows dragging of the rating container by the instructor name label.
-        window.my_dragging = {};
-        my_dragging.pageX0 = event.pageX;
-        my_dragging.pageY0 = event.pageY;
-        my_dragging.elem = $(this).closest(RATING_CONTAINER);
-        my_dragging.offset0 = $(my_dragging.elem).offset();
-        function handle_dragging(e){
-            let left = my_dragging.offset0.left + (e.pageX - my_dragging.pageX0);
-            let top = my_dragging.offset0.top + (e.pageY - my_dragging.pageY0);
-            $(my_dragging.elem)
-            .offset({top: top, left: left});
-        }
-        function handle_mouseup(e){
-            $(iframeBody)
-            .off('mousemove', handle_dragging)
-            .off('mouseup', handle_mouseup);
-        }
-        $(iframeBody)
-        .on('mouseup', handle_mouseup)
-        .on('mousemove', handle_dragging);
-    });
-    
-    this.displayRating = function(instructorName, x, y) {
-        let ratingDiv = ratingDivs[instructorName];
-        if(ratingDiv){
-            $(ratingDiv).css({
-                position:'absolute',
-                left:x,
-                top:y
-            })
-            $(ratingDiv).show();
-        } else {
-            instructorParameter = instructorName.replace(" ","+");
-            //There is no official api for ratemyprofessor so it has to be done through unnofficial means.
-            //This has the overhead of receiving an entire html webpage as a response, but it's the best
-            //that can be done.  Caching results can help alleviate this. Storing results on local storage may be better.
-            let request = `http://www.ratemyprofessors.com/search.jsp?query=${instructorParameter}+california+state+university+fresno`;
-            
-            chrome.runtime.sendMessage(({rating: true, request}), function(response) {
-                //HTML classes and ids
-                const RATING_EXISTS = ".rating";
-                const INSTRUCTOR_DEPARTMENT = ".instructor-department";
-                const RATINGS_COUNT = ".ratings-count";
-                const DIFFICULTY_RATING = ".difficulty-rating";
-                const OVERALL_RATING = ".overall-rating";
-                let newNode = undefined;
-                let rating = response.ratings;
-                if(rating) {
-                    if(rating.length == 1){ //If only one rating exists, use single rating view.
-                        newNode = $.parseHTML(html[RATING_HTML]);
-                        let ratingSubContainer = $(newNode).find(RATING_EXISTS);
-                        $(ratingSubContainer).find(INSTRUCTOR_DEPARTMENT).text(rating[0].department);
-                        $(ratingSubContainer).find(RATINGS_COUNT).text(rating[0].ratingsCount);
-                        $(ratingSubContainer).find(RATINGS_COUNT).attr('href',rating[0].link);
-                        $(ratingSubContainer).find(OVERALL_RATING).text(rating[0].overallRating);
-                        $(ratingSubContainer).find(DIFFICULTY_RATING).text(rating[0].difficultyRating);
-                    } else { //If multiple instructors found, use multi rating view.
-                        newNode = $.parseHTML(html[MULTIPLE_RATING_HTML]);
-                        let ratingTable = $(newNode).find(RATING_TABLE);
-                        for(var i = 0; i < rating.length; i++){
-                            $(ratingTable).append($(
-                                `<tr>
-                                    <td>${rating[i].department}</td>
-                                    <td><a href=${rating[i].link} target="_blank">${rating[i].ratingsCount}</a></td>
-                                    <td>${rating[i].overallRating}</td>
-                                    <td>${rating[i].difficultyRating}</td>
-                                </tr>`
-                            ));
+    R._cls = {
+        EXPAND_RATING_ARROW: '.expand-rating-arrow',
+        COLLAPSE_RATING_ARROW: '.collapse-rating-arrow',
+        CLOSE_RATING: '.close-rating',
+        RATING_HEADER: '.rating-header',
+        RATING_VISIBILITY: '.rating-visibility',
+        INSTRUCTOR_NAME: '.instructor-name',
+        RATING_CONTAINER: '.rating-container',
+        RATING_TABLE: '.rating-table',
+        RATING_EXISTS: '.rating',
+        INSTRUCTOR_DEPARTMENT: '.instructor-department',
+        RATINGS_COUNT: '.ratings-count',
+        DIFFICULTY_RATING: '.difficulty-rating',
+        OVERALL_RATING: '.overall-rating',
+    }
+    R._str = {
+        RATING_HTML: 'ratingHtml',
+        NO_RATING_HTML: 'noRatingHtml',
+        MULTIPLE_RATING_HTML: 'multipleRatingHtml',
+        RATING_CSS: 'rating.css',
+        INSTRUCTOR_PLACEHOLDER: 'Staff',
+    }
+    R._file = {
+        RATING_HTML: 'rating.html',
+        NO_RATING_HTML: 'no-rating.html',
+        MULTIPLE_RATING_HTML: 'multiple-ratings.html',
+    }
+    R._func = {
+        bindEventHandlers: function(){
+            let e = R._eventHandlers;
+            for (var i = 0; i < e.length; i++)
+                e[i].$element.on(e[i].event, e[i].selector, e[i].handler);
+        },
+        setHTML: function(fileName, propertyToSet) {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', chrome.runtime.getURL(fileName), true);
+            xhr.onload = function() {
+                R._vars.html[propertyToSet] = xhr.responseText;
+            }
+            xhr.send();
+        },
+        injectCSS: function() {
+            let cssLink = document.createElement('link');
+            cssLink.href = chrome.runtime.getURL(R._str.RATING_CSS);
+            cssLink.rel = 'stylesheet';
+            cssLink.type = 'text/css';
+            R._vars.$iframeBody.append($(cssLink));
+        },
+        loadHTML: function() {
+            R._func.setHTML(R._file.RATING_HTML, R._str.RATING_HTML);
+            R._func.setHTML(R._file.NO_RATING_HTML, R._str.NO_RATING_HTML);
+            R._func.setHTML(R._file.MULTIPLE_RATING_HTML, R._str.MULTIPLE_RATING_HTML);
+        },
+        displayRating: function(instructorName, x, y) {
+            let $ratingDiv = R._vars.ratingsCache[instructorName];
+            if ($ratingDiv) {
+                $ratingDiv.css({
+                    position:'absolute',
+                    left:x,
+                    top:y
+                })
+                $ratingDiv.show();
+            } else {
+                chrome.runtime.sendMessage({instructorName}, function(response) {
+                    let $newNode = undefined;
+                    let rating = response.ratings;
+                    if (rating) {
+                        if (rating.length == 1) { //If only one rating exists, use single rating view.
+                            $newNode = $($.parseHTML(R._vars.html[R._str.RATING_HTML]));
+                            let $ratingSubContainer = $newNode.find(R._cls.RATING_EXISTS);
+                            $ratingSubContainer.find(R._cls.INSTRUCTOR_DEPARTMENT).text(rating[0].department);
+                            $ratingSubContainer.find(R._cls.RATINGS_COUNT).text(rating[0].ratingsCount);
+                            $ratingSubContainer.find(R._cls.RATINGS_COUNT).attr('href',rating[0].link);
+                            $ratingSubContainer.find(R._cls.OVERALL_RATING).text(rating[0].overallRating);
+                            $ratingSubContainer.find(R._cls.DIFFICULTY_RATING).text(rating[0].difficultyRating);
+                        } else { //If multiple instructors found, use multi rating view.
+                            $newNode = $($.parseHTML(R._vars.html[R._str.MULTIPLE_RATING_HTML]));
+                            let $ratingTable = $newNode.find(R._cls.RATING_TABLE);
+                            for (var i = 0; i < rating.length; i++){
+                                $ratingTable.append($(
+                                    `<tr>
+                                        <td>${rating[i].department}</td>
+                                        <td><a href=${rating[i].link} target="_blank">${rating[i].ratingsCount}</a></td>
+                                        <td>${rating[i].overallRating}</td>
+                                        <td>${rating[i].difficultyRating}</td>
+                                    </tr>`
+                                ));
+                            }
                         }
+                    } else { //If zero ratings, use no rating view.
+                        $newNode = $($.parseHTML(R._vars.html[R._str.NO_RATING_HTML]));
                     }
-                } else { //If zero ratings, use no rating view.
-                    newNode = $.parseHTML(html[NO_RATING_HTML]);
-                }
-                $(newNode).find(INSTRUCTOR_NAME).text(instructorName);
-                $(newNode).css({
-                        position:'absolute',
-                        left:x,
-                        top:y
+                    $newNode.find(R._cls.INSTRUCTOR_NAME).text(instructorName);
+                    $newNode.css({
+                            position: 'absolute',
+                            left:x,
+                            top:y
+                    });
+                    R._vars.ratingsCache[instructorName] = $newNode;
+                    R._vars.$iframeBody.append($newNode);
+                    $newNode.show();
                 });
-                ratingDivs[instructorName] = newNode;
-                iframeBody.append(newNode);
-                $(newNode).show();
-            });
-        }
+            }         
+        },
+        hRatingDrag: function(e) {
+            //Allows dragging of the rating container by the instructor name label.
+            window.my_dragging = {};
+            my_dragging.pageX0 = e.pageX;
+            my_dragging.pageY0 = e.pageY;
+            my_dragging.elem = $(this).closest(R._cls.RATING_CONTAINER);
+            my_dragging.offset0 = $(my_dragging.elem).offset();
+            function handle_dragging(e) {
+                let left = my_dragging.offset0.left + (e.pageX - my_dragging.pageX0);
+                let top = my_dragging.offset0.top + (e.pageY - my_dragging.pageY0);
+                $(my_dragging.elem)
+                .offset({top: top, left: left});
+            }
+            function handle_mouseup(e) {
+                R._vars.$iframeBody
+                .off('mousemove', handle_dragging)
+                .off('mouseup', handle_mouseup);
+            }
+            R._vars.$iframeBody
+            .on('mouseup', handle_mouseup)
+            .on('mousemove', handle_dragging);
+        },
     }
+    R._eventHandlers = [
+        {
+            $element: R._vars.$iframeBody,
+            event: 'mousedown',
+            selector: R.INSTRUCTOR_NAME_SELECTOR,
+            handler: function(e) {
+                if (e.which == 1) {
+                    let instructorName = $(this).text();
+                    if (instructorName != R._str.INSTRUCTOR_PLACEHOLDER)
+                        R._func.displayRating(instructorName, e.pageX + 50, e.pageY);
+                }
+            },
+        },
+        {
+            $element: R._vars.$iframeBody,
+            event: 'click',
+            selector: R._cls.EXPAND_RATING_ARROW,
+            handler: function() {
+                $(this).hide();
+                $(this).siblings(R._cls.COLLAPSE_RATING_ARROW).css({display: 'inline-block'});
+                $(this).closest(R._cls.RATING_HEADER).siblings(R._cls.RATING_VISIBILITY).show();
+            },
+        },
+        {
+            $element: R._vars.$iframeBody,
+            event: 'click',
+            selector: R._cls.COLLAPSE_RATING_ARROW,
+            handler: function() {
+                $(this).hide();
+                $(this).siblings(R._cls.EXPAND_RATING_ARROW).css({display: 'inline-block'});
+                $(this).closest(R._cls.RATING_HEADER).siblings(R._cls.RATING_VISIBILITY).hide();
+            },
+        },
+        {
+            $element: R._vars.$iframeBody,
+            event: 'click',
+            selector: R._cls.CLOSE_RATING,
+            handler: function() {
+                $(this).closest(R._cls.RATING_CONTAINER).hide();
+            },
+        },
+        {
+            $element: R._vars.$iframeBody,
+            event: 'mousedown',
+            selector: R._cls.INSTRUCTOR_NAME,
+            handler: R._func.hRatingDrag,
+        },
+    ]
+    
+    return R;
 }
 
-/*TODO: 
-    Same Iframe id used across multiple pages that aren't important to the extension so initialization
-occurs more than it needs to.  Figure out how to only have it load on results page.
-*/
 $(document).ready(function() {
-    const INSTRUCTOR_PLACEHOLDER = "Staff";
-    const iframeId = 'ptifrmtgtframe';
-    let iframe = document.getElementById(iframeId);
-    $(iframe).on("load", function () {
-        let iframeContents = $(iframe).contents();
-        let iframeBody = $(iframeContents).find('body');
-        let ratingsViewController = new RatingsViewController(iframeBody);
-        //The instructor names lie in a span tag with an id pattern of MTG_INSTR$#
-        //where # is the order the class appears in the search results.
-        let instructorElementIds = "span[id*='MTG_INSTR$']";
-        /* Wanted to use a click handler but the page's javascript was interfering
-        with it and not triggering it.  There doesn't seem to be a clean solution to
-        rebinding handler order so mouseover will have to do for now. */
-        $(iframe.contentDocument).hoverIntent({
-           over: function(event) {
-                let instructorName = $(this).text();
-                if(instructorName != INSTRUCTOR_PLACEHOLDER){
-                    ratingsViewController.displayRating(instructorName,event.pageX+50,event.pageY);
-                }
-           },
-           selector: instructorElementIds
-        });
-        
-    });
+  const IFRAME_ID = 'ptifrmtgtframe';
+  let iframe = document.getElementById(IFRAME_ID);
+  $(iframe).on('load', function () {
+    let ratingsViewController = RatingsViewController(iframe.contentDocument.body);
+    /*
+        The website appears to use iframes to load content so the url stays the same and so 
+        this script runs on any page because that's the only thing that can be whitelisted in 
+        manifest.json.  To try to alleviate that issue, there's a check to see if an instructor
+        name element can be found before initializing the rating view controller.
+    */
+    if ($(ratingsViewController.INSTRUCTOR_NAME_SELECTOR))
+        ratingsViewController.init();
+  });
 });
