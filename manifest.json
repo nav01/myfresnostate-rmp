@@ -3,18 +3,23 @@
     "description": "Add rate my professor ratings to myfresnostate class search results.",
     "version": "1.0",
     "permissions": [
-        "https://www.ratemyprofessors.com/*"
+        "https://www.ratemyprofessors.com/*",
+        "storage"
     ],
     "background": {
-        "scripts": ["jquery-3.2.1.js","event_page.js"],
+        "scripts": ["jquery-3.2.1.js", "event_page.js", "options.js"],
         "persistent": false
     },
     "content_scripts": [
         {
-            "matches": ["https://my.fresnostate.edu/*","https://cmsweb.fresnostate.edu/*"],
-            "js": ["jquery-3.2.1.js","content_script.js"]
+            "matches": ["https://my.fresnostate.edu/*", "https://cmsweb.fresnostate.edu/*"],
+            "js": ["jquery-3.2.1.js", "content_script.js"]
         }
     ],
-    "web_accessible_resources": ["rating.html","no-rating.html","multiple-ratings.html","rating.css"],
-    "manifest_version": 3
+    "options_ui": {
+        "page": "options.html",
+        "chrome_style": true
+    },
+    "web_accessible_resources": ["rating.html", "single-rating.html", "no-rating.html", "multiple-ratings.html", "rating.css"],
+    "manifest_version": 5
 }

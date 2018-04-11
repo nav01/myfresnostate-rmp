@@ -1,81 +1,120 @@
 .blue-border {
     border: 1px solid #4a598c;
 }
-.formatting{
+
+.formatting {
     width: 200px;
     text-align:center;
 }
-.formatting-multi-rating{
+
+.formatting-multi-rating {
     width:400px;
     text-align:center;
 }
-.rating-container{
-    background-color:white;
+
+.rating-container {
+    background-color: white;
 }
-.rating-link{
-    color:white;
+
+.rating-link {
+    color: white;
 }
- .rating p{
-     background-color:#7382b5;
-     color:white;
-     margin:0px;
+
+.rating {
+    display: none;
+}
+
+.rating p {
+     background-color: #7382b5;
+     color: white;
+     margin: 0px;
      border: 1px solid white;
- }
+}
 
 .rating-table {
-    table-layout:fixed;
-    text-align:center;
+    table-layout: fixed;
+    text-align: center;
     width: 100%;
 }
 .rating-table thead {
-    background-color:#dae2ee;
-    color:#4a598c;
+    background-color: #dae2ee;
+    color: #4a598c;
 }
 
-.no-ratings{
-    background-color:#d6e1f9;
+.no-ratings {
+    display: none;
+    background-color: #d6e1f9;
 }
 
-.no-ratings p{
-    font-size:200%;
-    color:#4a598c;
+.no-ratings p {
+    font-size: 200%;
+    color: #4a598c;
 }
 
 .rating-table td {
      border: 1px solid #4a598c;
      margin: 0px;
 }
+
 .rating-header {
-    background-color:#0a3e91;
-    line-height:12px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background-color: #0a3e91;
 }
-.visible {
-    display:inline-block;
-    color:white;
-}
+
 .expand-rating-arrow {
     display:none;
 }
-.instructor-name{
-    color:white;
+
+.instructor-name {
+    column-width: 160px;
+    color: white;
 }
-.close-rating{
-    float:right;
-    color:white;
-    cursor:pointer;
+
+.close-rating {
+    color: white;
+    cursor: pointer;
+    line-height: 15px;
 }
+
 .arrow-properties {
-    float:left;
-    color:white;
-    cursor:pointer;
+    color: white;
+    cursor: pointer;
+
 }
-.no-select{
+
+.no-select {
     user-select: none;
-    cursor:default;
+    cursor: default;
 }
+
 .grabbable {
     cursor: move; /* fallback if grab cursor is unsupported */
 }
+
+.loading-container {
+    background-color: #d6e1f9;
+}
+
+.loading-rating {
+    border: 4px solid white;
+    border-top: 4px solid #4a598c;
+    border-radius: 50%;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 35px;
+    height: 35px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 span[id ^= "MTG_INSTR$"] {
     cursor: pointer;
 }
