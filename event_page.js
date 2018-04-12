@@ -60,12 +60,12 @@ function getRatings(links, sendResponse, ratings = []) {
     xhr.send();
 }
 
-
+const UNIVERSITY_PARAMETER = '+california+state+university+fresno';
 chrome.runtime.onMessage.addListener (
     function(request, sender, sendResponse) {
         if (request.msg == 'rating') {
             let instructorParameter = request.instructorName.replace(/\s+/g, '+');
-            let query = 'http://www.ratemyprofessors.com/search.jsp?query=' + instructorParameter + '+california+state+university+fresno';
+            let query = 'http://www.ratemyprofessors.com/search.jsp?query=' + instructorParameter + UNIVERSITY_PARAMETER;
             var xhr = new XMLHttpRequest();
             xhr.open('GET', query, true);
             xhr.onload = function() {

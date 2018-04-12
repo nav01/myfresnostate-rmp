@@ -106,7 +106,7 @@ function RatingsViewController(iframeBody){
                     $loading.hide();
                 }
             } else { //Zero ratings
-                $rating.append($('<p>No Ratings Found</p>'));
+                $rating.append($($.parseHTML(R._vars.html[R._str.NO_RATING_HTML])));
                 $rating.show();
                 $loading.hide();
             }
