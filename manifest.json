@@ -4,7 +4,8 @@
     "version": "1.0",
     "permissions": [
         "https://www.ratemyprofessors.com/*",
-        "storage"
+        "storage",
+        "unlimitedStorage"
     ],
     "background": {
         "scripts": ["jquery-3.2.1.js", "event_page.js", "options.js"],
@@ -21,5 +22,5 @@
         "chrome_style": true
     },
     "web_accessible_resources": ["rating.html", "single-rating.html", "no-rating.html", "multiple-ratings.html", "rating.css"],
-    "manifest_version": 5
+    "manifest_version": 2
 }

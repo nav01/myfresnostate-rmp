@@ -1,3 +1,4 @@
+//TODO CLEAR STORAGE WHEN NEAR FULL
 function RatingsViewController(iframeBody){
     var R = {
         init: function(){
@@ -7,41 +8,49 @@ function RatingsViewController(iframeBody){
         }
     };
     R._vars = {
-        html: {},
         $iframeBody: $(iframeBody),
         currentlyLoadingRating: {}, //To prevent click spamming.
+        html: {},
         ratingsCache: {},
     }
     R._cls = {
-        INSTRUCTOR_NAME_SELECTOR: 'span[id ^= "MTG_INSTR$"]',
-        EXPAND_RATING_ARROW: '.expand-rating-arrow',
-        COLLAPSE_RATING_ARROW: '.collapse-rating-arrow',
         CLOSE_RATING: '.close-rating',
-        RATING_HEADER: '.rating-header',
-        RATING_VISIBILITY: '.rating-visibility',
-        INSTRUCTOR_NAME: '.instructor-name',
-        RATING_CONTAINER: '.rating-container',
-        RATING_TABLE: '.rating-table',
-        RATING_EXISTS: '.rating',
-        INSTRUCTOR_DEPARTMENT: '.instructor-department',
-        RATINGS_COUNT: '.ratings-count',
+        COLLAPSE_RATING_ARROW: '.collapse-rating-arrow',
         DIFFICULTY_RATING: '.difficulty-rating',
-        OVERALL_RATING: '.overall-rating',
+        EXPAND_RATING_ARROW: '.expand-rating-arrow',
+        FORMATTING: 'formatting', //jquery argument
+        FORMATTING_MULTI_RATING: 'formatting-multi-rating', //jquery argument
+        INSTRUCTOR_DEPARTMENT: '.instructor-department',
+        INSTRUCTOR_NAME: '.instructor-name',
+        INSTRUCTOR_NAME_SELECTOR: 'span[id ^= "MTG_INSTR$"]',
         LOADING_CONTAINER: '.loading-container',
+        OVERALL_RATING: '.overall-rating',
+        RATING: '.rating',
+        RATING_CONTAINER: '.rating-container',
+        RATING_HEADER: '.rating-header',
+        RATING_TABLE: '.rating-table',
+        RATING_VISIBILITY: '.rating-visibility',
+        RATINGS_COUNT: '.ratings-count',
     }
     R._str = {
+        INSTRUCTOR_PLACEHOLDER: 'Staff',
+        MULTIPLE_RATING_HTML: 'multipleRatingHtml',
+        NO_RATING_HTML: 'noRatingHtml',
         RATING_HTML: 'ratingHtml',
         SINGLE_RATING_HTML: 'singleRatingHtml',
-        NO_RATING_HTML: 'noRatingHtml',
-        MULTIPLE_RATING_HTML: 'multipleRatingHtml',
-        RATING_CSS: 'rating.css',
-        INSTRUCTOR_PLACEHOLDER: 'Staff',
+        CHROME_RUNTIME_ERROR_ALERT: 'An unexpected error occurred while getting rating.  Try again.',
+        FAILED_TO_OBTAIN_RATING: 'Failed to obtain rating from ratemyprofessors, try again.  If issue persists, check http://www.ratemyprofessors.com to see whether the site is down.',
+        FAILED_TO_OBTAIN_FILE: 'Failed to load a necessary extension file. Try reloading the page.  If issue persists, reinstall extension.',
+        //chrome messages
+        MSG_RATING: 'rating',
+        MSG_OPTIONS_UPDATE_FREQUENCY: 'options.updateFrequency',
     }
     R._file = {
+        MULTIPLE_RATING_HTML: 'multiple-ratings.html',
+        NO_RATING_HTML: 'no-rating.html',
+        RATING_CSS: 'rating.css',
         RATING_HTML: 'rating.html',
         SINGLE_RATING_HTML: 'single-rating.html',
-        NO_RATING_HTML: 'no-rating.html',
-        MULTIPLE_RATING_HTML: 'multiple-ratings.html',
     }
     R._func = {
         bindEventHandlers: function(){
@@ -50,29 +59,48 @@ function RatingsViewController(iframeBody){
                 e[i].$element.on(e[i].event, e[i].selector, e[i].handler);
         },
         setHTML: function(fileName, propertyToSet) {
+            //Load HTML from file.
             let xhr = new XMLHttpRequest();
             xhr.open('GET', chrome.runtime.getURL(fileName), true);
             xhr.onload = function() {
                 R._vars.html[propertyToSet] = xhr.responseText;
             }
+            xhr.onerror = function() {
+                alert(R._str.FAILED_TO_OBTAIN_FILE);
+            }
             xhr.send();
         },
         injectCSS: function() {
+            //Inject extension css into the iframe.
             let cssLink = document.createElement('link');
-            cssLink.href = chrome.runtime.getURL(R._str.RATING_CSS);
+            cssLink.href = chrome.runtime.getURL(R._file.RATING_CSS);
             cssLink.rel = 'stylesheet';
             cssLink.type = 'text/css';
             R._vars.$iframeBody.append($(cssLink));
         },
         loadHTML: function() {
+            //Load all html resources needed.
             R._func.setHTML(R._file.RATING_HTML, R._str.RATING_HTML);
             R._func.setHTML(R._file.SINGLE_RATING_HTML, R._str.SINGLE_RATING_HTML);
-            R._func.setHTML(R._file.NO_RATING_HTML, R._str.NO_RATING_HTML);
             R._func.setHTML(R._file.MULTIPLE_RATING_HTML, R._str.MULTIPLE_RATING_HTML);
+            R._func.setHTML(R._file.NO_RATING_HTML, R._str.NO_RATING_HTML);
+        },
+        newLoadingRatingDiv: function(instructorName, x, y) {
+            //Create new div with loading animation immediately on instructor click for user feedback.
+            let $newNode = $($.parseHTML(R._vars.html[R._str.RATING_HTML]));
+            $newNode.find(R._cls.INSTRUCTOR_NAME).text(instructorName);
+            $newNode.css({
+                position: 'absolute',
+                left: x,
+                top: y
+            });
+            R._vars.ratingsCache[instructorName] = $newNode;
+            R._vars.$iframeBody.append($newNode);
         },
         updateLoadingRatingDiv: function(instructorName, ratings) {
+            //Update div after ratings are obtained from storage/ratemyprofessor.
             let $node = R._vars.ratingsCache[instructorName];
-            let $rating = $node.find(R._cls.RATING_EXISTS);
+            let $rating = $node.find(R._cls.RATING);
             let $loading = $node.find(R._cls.LOADING_CONTAINER);
             if (ratings) {
                 if (ratings.length == 1) { //If only one rating exists, use single rating view.
@@ -87,7 +115,6 @@ function RatingsViewController(iframeBody){
                     $loading.hide();
                     
                 } else { //If multiple instructors found, use multi rating view.
-                    console.log(ratings.length);
                     let $multiRatingNode = $($.parseHTML(R._vars.html[R._str.MULTIPLE_RATING_HTML]));
                     for (var i = 0; i < ratings.length; i++){
                         $multiRatingNode.append($(
@@ -100,8 +127,8 @@ function RatingsViewController(iframeBody){
                         ));
                     }
                     $rating.append($multiRatingNode);
-                    $node.removeClass('formatting');
-                    $node.addClass('formatting-multi-rating');
+                    $node.removeClass(R._cls.FORMATTING);
+                    $node.addClass(R._cls.FORMATTING_MULTI_RATING);
                     $rating.show();
                     $loading.hide();
                 }
@@ -111,21 +138,18 @@ function RatingsViewController(iframeBody){
                 $loading.hide();
             }
         },
-        newLoadingRatingDiv: function(instructorName, x, y) {
-            let $newNode = $($.parseHTML(R._vars.html[R._str.RATING_HTML]));
-            $newNode.find(R._cls.INSTRUCTOR_NAME).text(instructorName);
-            $newNode.css({
-                position: 'absolute',
-                left: x,
-                top: y
-            });
-            R._vars.ratingsCache[instructorName] = $newNode;
-            R._vars.$iframeBody.append($newNode);
+        handleChromeRuntimeError: function(instructorName, error) {
+            if (error) {
+                R._vars.ratingsCache[instructorName].remove();
+                delete R._vars.ratingsCache[instructorName];
+                alert(R._str.CHROME_RUNTIME_ERROR_ALERT);
+                return true;
+            }
+            return false;
         },
         displayRating: function(instructorName, x, y) {
             let $ratingDiv = R._vars.ratingsCache[instructorName];
-            if ($ratingDiv) {
-                console.log('used rating cache');
+            if ($ratingDiv) { //Cached during this session.
                 $ratingDiv.css({
                     position: 'absolute',
                     left: x,
@@ -134,22 +158,27 @@ function RatingsViewController(iframeBody){
                 $ratingDiv.show();
             } else {
                 R._func.newLoadingRatingDiv(instructorName, x, y);
-                chrome.storage.local.get(instructorName, function(result) {
-                    if (chrome.runtime.lastError){
+                chrome.storage.local.get(instructorName, function(result) {//Rating stored locally?
+                    if (R._func.handleChromeRuntimeError(instructorName, chrome.runtime.lastError))
                         return;
-                    }
-                    chrome.runtime.sendMessage({msg: 'options.updateFrequency'}, function(response) {
-                        console.log(result);
+                    chrome.runtime.sendMessage({msg: R._str.MSG_OPTIONS_UPDATE_FREQUENCY}, function(response) {
                         if (!jQuery.isEmptyObject(result) && Date.now() - result[instructorName].date - response.updateFrequency < 0) {
-                            console.log('used stored value');
                             R._func.updateLoadingRatingDiv(instructorName, result[instructorName].ratings);
                         } else if (!R._vars.currentlyLoadingRating[instructorName]) {
                             R._vars.currentlyLoadingRating[instructorName] = true;
-                            chrome.runtime.sendMessage({msg:'rating', instructorName}, function(response) {
-                                console.log('needed to get rating');
-                                delete R._vars.currentlyLoadingRating[instructorName];
-                                chrome.storage.local.set({[instructorName]: {ratings: response.ratings, date: Date.now()}});
-                                R._func.updateLoadingRatingDiv(instructorName, response.ratings);
+                            chrome.runtime.sendMessage({msg: R._str.MSG_RATING, instructorName}, function(response) { //Get rating from ratemyprofessor.
+                                if (R._func.handleChromeRuntimeError(instructorName, chrome.runtime.lastError))
+                                    return;
+                                if (response.success) {
+                                    delete R._vars.currentlyLoadingRating[instructorName];
+                                    chrome.storage.local.set({[instructorName]: {ratings: response.ratings, date: Date.now()}});
+                                    R._func.updateLoadingRatingDiv(instructorName, response.ratings);
+                                } else {
+                                    R._vars.ratingsCache[instructorName].remove();
+                                    delete R._vars.currentlyLoadingRating[instructorName];
+                                    delete R._vars.ratingsCache[instructorName];
+                                    alert(R._str.FAILED_TO_OBTAIN_RATING);
+                                }
                             });
                         }
                     });

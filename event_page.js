@@ -1,9 +1,10 @@
 //Returns an array of link/department pairs stored in an object, or undefined if there are no results.
 function extractLinks(doc){
     const RESULT_LIST_CONTAINER_ID = '#searchResultsBox';
+    const INSTRUCTOR_NAME_CLASS = '.main';
     const INSTRUCTOR_ITEM_CLASS = '.listing.PROFESSOR';
     const RESULT_COUNT_CLASS = '.result-count';
-    const NO_RESULTS = "Your search didn't return any results."
+    const NO_RESULTS = "Your search didn't return any results.";
     //The search doesn't let you narrow by department so it has to be extracted from the
     //search results or rating page.  The department helps the user  in the case of multiple instructors 
     //with the same name.  Not helpful in the case that the two same named professors are in the same department,
@@ -21,6 +22,7 @@ function extractLinks(doc){
     });
     return ratingLinks;
 }
+
 //Gets the ratings from the links obtained by the extractLinks function. (Recursive)
 //Sends an array of objects back to the content script.
 function getRatings(links, sendResponse, ratings = []) {
@@ -36,15 +38,15 @@ function getRatings(links, sendResponse, ratings = []) {
  
     if (links.length == 0) { //Recursion termination condition.
         if (ratings.length == 0) {
-            sendResponse({ratings: null});
+            sendResponse({success: true, ratings: null});
         } else {
-            sendResponse({ratings});
+            sendResponse({success: true, ratings});
         }
         return;
     }
     var xhr = new XMLHttpRequest();
     var link = links.pop();
-    xhr.open("GET",link.link,true);
+    xhr.open("GET", link.link, true);
     xhr.onload = function() {
         //Parses the rating page and extracts rating information then makes a recursive call on the outer method to process the remaining links.
         var parser = new DOMParser(); //Jquery parser ignores body so DOMParser is used instead.
@@ -60,22 +62,26 @@ function getRatings(links, sendResponse, ratings = []) {
     xhr.send();
 }
 
-const UNIVERSITY_PARAMETER = '+california+state+university+fresno';
 chrome.runtime.onMessage.addListener (
     function(request, sender, sendResponse) {
         if (request.msg == 'rating') {
+            const UNIVERSITY_PARAMETER = '+california+state+university+fresno';
+            const RMP = 'http://www.ratemyprofessors.com/search.jsp?query='
             let instructorParameter = request.instructorName.replace(/\s+/g, '+');
-            let query = 'http://www.ratemyprofessors.com/search.jsp?query=' + instructorParameter + UNIVERSITY_PARAMETER;
+            let query = RMP + instructorParameter + UNIVERSITY_PARAMETER;
             var xhr = new XMLHttpRequest();
             xhr.open('GET', query, true);
             xhr.onload = function() {
                 var ratingLinks = extractLinks($.parseHTML(xhr.responseText, undefined));
                 if (!ratingLinks) {
-                    sendResponse({ratings: null});
+                    sendResponse({success: true, ratings: null});
                     return;
                 }
                 getRatings(ratingLinks, sendResponse);
             }
+            xhr.onerror = function() {
+                sendResponse({success: false});
+            };
             xhr.send();
             return true;
         }

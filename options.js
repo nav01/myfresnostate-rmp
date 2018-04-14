@@ -2,9 +2,9 @@ class Options {
     //Meant to be a singleton so no problem with declaring 'constants' inside
     //due to javascript not allowing class level constants in the typical way.
     constructor() {
-            //Days in ms. [0, 1, 7, 14, 30, 90, 180]
-            this._VALID_FREQUENCIES = [8.64e+7, 6.048e+8, 1.21e+9, 2.592e+9, 7.776e+9, 1.555e+10]
-            this._DEFAULTS = {updateFrequency: this._VALID_FREQUENCIES[1]};
+        //Days in ms. [0, 1, 7, 14, 30, 90, 180]
+        this._VALID_FREQUENCIES = [8.64e+7, 6.048e+8, 1.21e+9, 2.592e+9, 7.776e+9, 1.555e+10]
+        this._DEFAULTS = {updateFrequency: this._VALID_FREQUENCIES[1]};
     }
         
     init() {
